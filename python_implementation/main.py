@@ -2,6 +2,8 @@ import os
 import ssl
 import time
 
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -87,10 +89,12 @@ def main():
   image_unprocessed = image / 2 + 0.5
   label = CLASSES[labels[idx]]
 
-  # save sample image
+  # save/load sample image
   file_path = os.path.join('test_images', label)
   torchvision.utils.save_image(image, f'{file_path}_processed.png')
   torchvision.utils.save_image(image_unprocessed, f'{file_path}_raw.png')
+  np.save(f'{file_path}.npy', image.numpy())
+  image = torch.Tensor(np.load(f'{file_path}.npy'))
 
   # time forward pass on test image
   image = image.unsqueeze(dim=0)
