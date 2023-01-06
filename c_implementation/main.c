@@ -76,7 +76,7 @@ void pool(int a_width, int amount,int channel,
     return;
 }
 
-void dense(int matrix_a, int matrix_b, int width, int height){
+void densing(int a_width, int b_width, int c_width,int matrix_a[a_width],int matrix_b[b_width],int matrix_c[c_width]){
 
 
     return;
