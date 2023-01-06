@@ -55,10 +55,23 @@ void convolution(int a_width, int b_width, int channel_in, int channel_out,
     return ;
 }
 
-void pool(int a_width, int amount,int channel_in, int channel_out,
-                int matrix_a[a_width][a_width][channel_in],
-                int matrix_b[a_width/amount][a_width/amount][channel_out]){
+void pool(int a_width, int amount,int channel,
+                int matrix_a[a_width][a_width][channel],
+                int matrix_b[a_width/amount][a_width/amount][channel]){
+    
+    for(int c = 0; c < channel; ++c){
+        for (int i = 0; i < a_width; i = i + amount){
+            for (int j = 0; j < a_width; j = j + amount){
 
+                for(int x = 0; x < amount; x++){
+                    for(int y = 0; y < amount; y++){
+                        matrix_b[i/amount][j/amount][c] += matrix_a[i+x][j+y][c];
+                    }
+                }
+
+            }
+        }
+    }
 
     return;
 }
