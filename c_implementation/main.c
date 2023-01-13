@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "weights.h"
 #include "input.h"
-#include <math.h>
+#include "sigmoid.h"
+
 
 #define imgsize 32
 #define filter_size 5
@@ -18,6 +20,11 @@ void pool(int a_width, int amount,int channel,
          float matrix_a[channel][a_width][a_width],
          float matrix_b[channel][a_width/amount][a_width/amount]);
 
+void fully_connected(int a_width, int b_width, int c_width,int matrix_a[a_width],int matrix_b[b_width],int matrix_c[c_width]);
+
+void sigmoid(int a_width,int channel,
+                float matrix_a[channel][a_width][a_width],
+                float matrix_b[channel][a_width][a_width]);
 
 
 int main(){
@@ -27,6 +34,8 @@ int main(){
     float out_conv_1[6][sizexy_conv1][sizexy_conv1];
 
     convolution(imgsize,filter_size,3,6,input,conv1_weight,out_conv_1,conv1_bias);
+
+    sigmoid(sizexy_conv1,6,out_conv_1,out_conv_1);
 
 
     // LAYER 2
@@ -41,6 +50,8 @@ int main(){
 
     convolution(sizexy_pool1,filter_size,6,16,out_pool_1,conv2_weight,out_conv_2,conv2_bias);
 
+    sigmoid(sizexy_conv2,16,out_conv_2,out_conv_2);
+
     // LAYER 4
     int sizexy_pool2 = sizexy_conv2 / 2;
     float out_pool_2[16][sizexy_pool2][sizexy_pool2];
@@ -53,6 +64,14 @@ int main(){
 
 
     convolution(sizexy_pool2,filter_size,16,120,out_pool_2,conv3_weight,out_conv_3,conv3_bias);
+
+
+    for (int i = 0; i < 120; i++){
+
+        printf("%f here\n",out_conv_3[120][0][0]);
+
+    } //something aint workin....
+    
 
     // LAYER 6 
 
@@ -131,10 +150,23 @@ void fully_connected(int a_width, int b_width, int c_width,int matrix_a[a_width]
     return;
 }
 
-void activation(int a_width, int amount,int channel_in, int channel_out,
-                int matrix_a[a_width][a_width][channel_in],
-                int matrix_b[a_width/amount][a_width/amount][channel_out]){
+float sigmoidf(float n) {
 
+    return (1 / (1 + powf(EULER_NUMBER_F, -n)));
 
-    return;
+}
+
+void sigmoid(int a_width,int channel,
+                float matrix_a[channel][a_width][a_width],
+                float matrix_b[channel][a_width][a_width]){
+    
+    for (int c = 0; c < channel; c ++){
+        for (int i = 0; i < a_width; i ++){
+            for (int j = 0; j < a_width; j ++){
+                matrix_b[c][i][j] = sigmoidf(matrix_a[c][i][j]);
+            }
+        }
+
+    }
+
 }
