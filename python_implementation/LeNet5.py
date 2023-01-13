@@ -44,7 +44,7 @@ class LeNet5(nn.Module):
     return logits, predictions
 
 
-def save_model(model: nn.Module, path: str) -> None:
+def save_model_npy(model: nn.Module, path: str) -> None:
   """Saves the network parameters as multiple .npy files, one per layer.
   """
 
@@ -54,7 +54,7 @@ def save_model(model: nn.Module, path: str) -> None:
     np.save(file_path, state_dict[layer].numpy())
 
 
-def load_model(model: nn.Module, path: str) -> nn.Module:
+def load_model_npy(model: nn.Module, path: str) -> nn.Module:
   state_dict = model.state_dict()
 
   for layer in state_dict:
@@ -64,4 +64,15 @@ def load_model(model: nn.Module, path: str) -> nn.Module:
 
   model.load_state_dict(state_dict)
   return model
+
+
+def save_model_txt(model: nn.Module, path: str) -> None:
+  """Saves the network parameters as multiple .npy files, one per layer.
+  """
+
+  state_dict = model.state_dict()
+  for layer in state_dict:
+    file_path = os.path.join(path, layer)
+    with open(f'{file_path}.txt', 'w') as save_file:
+      save_file.write(np.array2string(state_dict[layer].numpy(), separator=','))
 

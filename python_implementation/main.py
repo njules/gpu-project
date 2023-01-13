@@ -1,5 +1,6 @@
 import os
 import ssl
+import sys
 import time
 
 import numpy as np
@@ -11,11 +12,13 @@ import torchvision
 import torchvision.transforms as transforms
 
 from eval import plot_losses, show_batch_images
-from LeNet5 import LeNet5, load_model, save_model
+from LeNet5 import LeNet5, load_model_npy, save_model_npy, save_model_txt
 from train import train_epochs
 
 
 ssl._create_default_https_context = ssl._create_unverified_context  # for downloading dataset
+np.set_printoptions(threshold=sys.maxsize)  # for saving weights in txt file
+
 
 DEVICE = 'cpu'  # 'cuda' if torch.cuda.is_available() else 'cpu'
 LEARNING_RATE = 0.01
@@ -66,43 +69,46 @@ def main():
   criterion = nn.CrossEntropyLoss()
   optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.9)
 
-  # # train model
+  ################# train model ###########################
   # model, _, (train_losses, val_losses) = train_epochs(model, criterion, optimizer, train_loader, val_loader, N_EPOCHS, DEVICE)
   # plot_losses(train_losses, val_losses)
-  # save_model(model, 'weights')
-  model = load_model(model, 'weights')
+  # save_model_npy(model, 'weights/npy')
+  model = load_model_npy(model, 'weights/npy')
+  save_model_txt(model, 'weights/txt')
 
-  # get inputs and outputs for a single batch
-  data_iter = iter(train_loader)
-  inputs, labels = next(data_iter)
-  _, outputs = model(inputs)
-  preds = outputs.max(dim=1).indices
+  ################# sample images #########################
+  # data_iter = iter(train_loader)
+  # inputs, labels = next(data_iter)
+  # _, outputs = model(inputs)
+  # preds = outputs.max(dim=1).indices
 
-  # # show images of batch
+  ################# show sample images ####################
   # show_batch_images(inputs)
   # print(' '.join('%5s' % CLASSES[preds[j]] for j in range(labels.shape[0])))
   # print(' '.join('%5s' % CLASSES[labels[j]] for j in range(labels.shape[0])))
 
-  # select sample image
-  idx = (preds == labels).max(dim=0).indices
-  image = inputs[idx]
-  image_unprocessed = image / 2 + 0.5
-  label = CLASSES[labels[idx]]
+  ################# select sample image ###################
+  # idx = (preds == labels).max(dim=0).indices
+  # image = inputs[idx]
+  # image_unprocessed = image / 2 + 0.5
+  # label = CLASSES[labels[idx]]
 
   # save/load sample image
-  file_path = os.path.join('test_images', label)
-  torchvision.utils.save_image(image, f'{file_path}_processed.png')
-  torchvision.utils.save_image(image_unprocessed, f'{file_path}_raw.png')
-  np.save(f'{file_path}.npy', image.numpy())
-  image = torch.Tensor(np.load(f'{file_path}.npy'))
+  # file_path = os.path.join('test_images', label)
+  # torchvision.utils.save_image(image, f'{file_path}_processed.png')
+  # torchvision.utils.save_image(image_unprocessed, f'{file_path}_raw.png')
+  # np.save(f'{file_path}.npy', image.numpy())
+  # with open(f'{file_path}.txt', 'w') as save_file:
+  #   save_file.write(np.array2string(image.numpy(), separator=','))
+  # image = torch.Tensor(np.load(f'{file_path}.npy'))
 
-  # time forward pass on test image
-  image = image.unsqueeze(dim=0)
-  start_time = time.time()
-  _, output = model(image)
-  duration = time.time() - start_time
-  prediction = CLASSES[output.max(dim=1).indices]
-  print(f"Took {duration} seconds to make prediction \"{prediction}\" for image. ")
+  ################# measure time ##########################
+  # image = image.unsqueeze(dim=0)
+  # start_time = time.time()
+  # _, output = model(image)
+  # duration = time.time() - start_time
+  # prediction = CLASSES[output.max(dim=1).indices]
+  # print(f"Took {duration} seconds to make prediction \"{prediction}\" for image. ")
 
 
 if __name__ == '__main__':
