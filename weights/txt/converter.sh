@@ -2,7 +2,7 @@
 
 input=$(cat ${1} | tr [ { | tr ] })
 
-echo $input > result.txt
+echo "$input" > result.txt
 
 
 
