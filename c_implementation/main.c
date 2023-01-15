@@ -31,7 +31,7 @@ void sigmoid(int a_width,int channel,
                 long double matrix_a[channel][a_width][a_width],
                 long double matrix_b[channel][a_width][a_width]);
 
-static void softmax(size_t input_len, long double input[input_len]);
+void softmax(size_t input_len, long double input[input_len]);
 
 
 int main(){
