@@ -7,3 +7,7 @@
 #include "input.h"
 #include "sigmoid.h"
 
+int main(){
+
+    
+}
