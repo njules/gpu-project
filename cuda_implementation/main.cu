@@ -14,10 +14,10 @@
 #define filter_size 5
 
 
-/*__global__ void convolution(int a_width, int b_width, int channel_in, int channel_out,
-                long double ***matrix_a, //[channel_in][a_width][a_width]
-                long double ****matrix_b, //[channel_out][channel_in][b_width][b_width]
-                long double ***matrix_c, //[channel_out][a_width - b_width + 1][a_width - b_width + 1]
+__global__ void convolution(int a_width, int b_width, int channel_in, int channel_out,
+                long double *matrix_a, //[channel_in][a_width][a_width]
+                long double *matrix_b, //[channel_out][channel_in][b_width][b_width]
+                long double *matrix_c, //[channel_out][a_width - b_width + 1][a_width - b_width + 1]
                 long double *bias); //[channel_out]*/
 
 __global__ void avgpool();
@@ -30,10 +30,7 @@ void softmax();
 
 int main(){
 
-long double *input;
-
-input = (long double*)malloc(32 * 32 * 3 * sizeof(long double));
-
+//KERNEL CONFIGURATION
 
 int threads = 5;
 dim3 block(threads); //threads
@@ -41,28 +38,49 @@ dim3 grid(6); //blocks
 
 cudaSetDevice(0);
 
-cudaMalloc( (void**)&dev_a, N * sizeof(int) );
-cudaMalloc( (void**)&dev_b, M * sizeof(int) );
+//LAYER 1
 
-cudaMemcpy( dev_a, a, N * sizeof(int), cudaMemcpyHostToDevice);
-cudaMemcpy( dev_b, b, M * sizeof(int), cudaMemcpyHostToDevice);
+long double *dev_input_conv1, *dev_matrix_conv1, *dev_bias1, *dev_output_conv1;
+
+long double *output_conv1;
+
+output_conv1 = (long double*)malloc(5*5*3*6 * sizeof(long double));
+
+// Host to Device
+
+cudaMalloc( (void**)&dev_input_conv1, 32*32*3 * sizeof(long double) );
+cudaMalloc( (void**)&dev_matrix_conv1, 5*5*3*6 * sizeof(long double) );
+cudaMalloc( (void**)&dev_output_conv1, 28*28*6 * sizeof(long double) );
+cudaMalloc( (void**)&dev_bias1, 6 * sizeof(long double) );
+
+cudaMemcpy( dev_input_conv1, input, 32*32*3 * sizeof(long double), cudaMemcpyHostToDevice);
+cudaMemcpy( dev_matrix_conv1, conv1_weight, 5*5*3*6 * sizeof(long double), cudaMemcpyHostToDevice);
+cudaMemcpy( dev_matrix_conv1, conv1_weight, 6 * sizeof(long double), cudaMemcpyHostToDevice);
 
 //kernel
-convolution<<<grid,block,(threads+M/2) * sizeof(int)>>>(dev_a,dev_b,dev_c,N,M);
+convolution<<<grid,block>>>(32,5,3,6,dev_input_conv1,dev_matrix_conv1,dev_output_conv1,dev_bias1);
+
+// Device to Host
+cudaMemcpy( output_conv1 , dev_output_conv1, 5*5*3*6 * sizeof(long double), cudaMemcpyDeviceToHost);
+
+// Freeing Space
+
+cudaFree(dev_input_conv1);
+cudaFree(dev_matrix_conv1);
+cudaFree(dev_output_conv1);
+cudaFree(dev_bias1);
 
 
-cudaMemcpy( c, dev_c, N * sizeof(int), cudaMemcpyDeviceToHost);
+//LAYER 2
 
 
 
-free(a);
-free(b);
 
-cudaFree(dev_a);
-cudaFree(dev_b);
+
+
+
 
 cudaDeviceReset();
-
 
 }
 
@@ -75,16 +93,17 @@ long double sigmoidl(long double n) {
 }
 
 __global__ void convolution(int a_width, int b_width, int channel_in, int channel_out,
-                long double ***matrix_a, //[channel_in][a_width][a_width]
-                long double ****matrix_b, //[channel_out][channel_in][b_width][b_width]
-                long double ***matrix_c, //[channel_out][a_width - b_width + 1][a_width - b_width + 1]
+                long double *matrix_a, //[channel_in][a_width][a_width]
+                long double *matrix_b, //[channel_out][channel_in][b_width][b_width]
+                long double *matrix_c, //[channel_out][a_width - b_width + 1][a_width - b_width + 1]
                 long double *bias){
 
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
 	int res = 0;
 	
 	__shared__ extern int s[];
-	if(idx >= n)return;
+	
+	if(idx >= a_width)return;
 	
 	s[threadIdx.x+m/2] = a[idx];
 	
