@@ -3,8 +3,8 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include "weights.h"
-#include "input.h"
+#include "weights_vectors.h"
+#include "input_vector.h"
 #include "sigmoid.h"
 
 #include <cuda_runtime.h>
@@ -99,13 +99,15 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
                 long double *bias){
 
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	int res = 0;
+	long double res = 0;
 	
 	__shared__ extern int s[];
-	
+
+	//to shared memory
+
 	if(idx >= a_width)return;
 	
-	s[threadIdx.x+m/2] = a[idx];
+	/*s[threadIdx.x+m/2] = a[idx];
 	
 	if(idx < m/2){
 		s[threadIdx.x] = 0;
@@ -113,11 +115,15 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
 	if(idx > n-m/2-1){
 		s[threadIdx.x+m] = 0;
 		
-	}
+	}*/
+
+
 	
 	__syncthreads();
+
+	//start computation
 	
-	if((threadIdx.x > blockDim.x - m/2 - 1 && idx < n - m/2) || (threadIdx.x < m/2 && idx > m/2)){ //its border use global
+	/*if((threadIdx.x > blockDim.x - m/2 - 1 && idx < n - m/2) || (threadIdx.x < m/2 && idx > m/2)){ //its border use global
 	
 		for(int i = 0; i < m; i++){
 			res += a[idx+i-m/2] * b[i];
@@ -131,8 +137,12 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
 			
 		}
 	
-	}
+	}*/
+
+
+
+	//to output
 	
-	c[idx] = res;
+	matrix_c[idx] = res;
 
 }

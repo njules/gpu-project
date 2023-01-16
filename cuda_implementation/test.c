@@ -29,5 +29,5 @@ int main(){
 }
 
 void test( long double *matrix_a, int i, int j, int k){
-    printf("%Lf here \n",matrix_a[i + j * a + k * b]);
+    printf("%Lf here \n",matrix_a[j + i * a + k * b]);
 }
