@@ -58,7 +58,7 @@ cudaMemcpy( dev_matrix_conv1, conv1_weight, 5*5*3*6 * sizeof(long double), cudaM
 cudaMemcpy( dev_matrix_conv1, conv1_weight, 6 * sizeof(long double), cudaMemcpyHostToDevice);
 
 //kernel
-convolution<<<grid,block>>>(32,5,3,6,dev_input_conv1,dev_matrix_conv1,dev_output_conv1,dev_bias1);
+convolution<<<grid,block, 32 * 32 * 3 * sizeof(long double)>>>(32,5,3,6,dev_input_conv1,dev_matrix_conv1,dev_output_conv1,dev_bias1);
 
 // Device to Host
 cudaMemcpy( output_conv1 , dev_output_conv1, 5*5*3*6 * sizeof(long double), cudaMemcpyDeviceToHost);
