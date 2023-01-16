@@ -108,7 +108,7 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
 	if(idx >= a_width) return;
 	
 	for(int c_in = 0; c_in < channel_in; c_in++){
-		s[threadIdx.x + threadIdx.y * tile_size + c_in * channel_in]= matrix_a[idx + idy  + c_in * channel_in];
+		s[threadIdx.x + threadIdx.y * tile_size + c_in * tile_size * tile_size] = matrix_a[idx + idy * a_width + c_in * a_width * a_width];
 	}
 	
 
@@ -124,7 +124,7 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
 			for(int i = 0; i < b_width; i++){
 				for(int j = 0;j < b_width; j++){
 					for(int c_in = 0; c_in < channel_in; c_in++){
-						res += s[i + j + c_in * channel_in] * matrix_b[i + j + c_out * channel_out + c_in * channel_in];
+						res += s[i + j * tile_size + c_in * tile_size * tile_size] * matrix_b[i + j * b_width + c_in * b_width * b_width + c_out * channel_in * b_width * b_width];
 					}
 				}
 			}
