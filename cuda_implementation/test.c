@@ -20,7 +20,7 @@ int main(){
     j = 0;
     k = 0;
 
-    test(input_vector, i,j,k);
+    test(input, i,j,k);
 
     printf("%Lf here \n",input[k][j][i]);
 

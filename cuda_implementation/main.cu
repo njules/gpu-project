@@ -12,7 +12,7 @@
 
 #define imgsize 32
 #define filter_size 5
-
+#define tile_size 32
 
 __global__ void convolution(int a_width, int b_width, int channel_in, int channel_out,
                 long double *matrix_a, //[channel_in][a_width][a_width]
@@ -98,51 +98,42 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
                 long double *matrix_c, //[channel_out][a_width - b_width + 1][a_width - b_width + 1]
                 long double *bias){
 
-	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	long double res = 0;
+	int idx = blockDim.x * blockIdx.x + threadIdx.x; //column
+	int idy = blockDim.y * blockIdx.y + threadIdx.y; //column
 	
-	__shared__ extern int s[];
+	__shared__  extern double long s[];
 
-	//to shared memory
+	//to shared memory (no ghost cells)
 
-	if(idx >= a_width)return;
+	if(idx >= a_width) return;
 	
-	/*s[threadIdx.x+m/2] = a[idx];
-	
-	if(idx < m/2){
-		s[threadIdx.x] = 0;
+	for(int c_in = 0; c_in < channel_in; c_in++){
+		s[threadIdx.x + threadIdx.y * tile_size + c_in * channel_in]= matrix_a[idx + idy  + c_in * channel_in];
 	}
-	if(idx > n-m/2-1){
-		s[threadIdx.x+m] = 0;
-		
-	}*/
-
-
 	
+
 	__syncthreads();
 
 	//start computation
-	
-	/*if((threadIdx.x > blockDim.x - m/2 - 1 && idx < n - m/2) || (threadIdx.x < m/2 && idx > m/2)){ //its border use global
-	
-		for(int i = 0; i < m; i++){
-			res += a[idx+i-m/2] * b[i];
+
+	if(threadIdx.x < tile_size && threadIdx.y < tile_size){	
+		
+		for(int c_out = 0; c_out < channel_out; c_out++){
+			long double res = bias[c_out];
+
+			for(int i = 0; i < b_width; i++){
+				for(int j = 0;j < b_width; j++){
+					for(int c_in = 0; c_in < channel_in; c_in++){
+						res += s[i + j + c_in * channel_in] * matrix_b[i + j + c_out * channel_out + c_in * channel_in];
+					}
+				}
+			}
+
+			matrix_c[idx] = res;
+
 		}
-	
+
 	}
-	else{//its inner use shared
-	
-		for(int i = 0; i < m; i++){
-			res += s[threadIdx.x+i] * b[i];
-			
-		}
-	
-	}*/
 
-
-
-	//to output
-	
-	matrix_c[idx] = res;
 
 }
