@@ -20,9 +20,11 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
                  double *matrix_c, //[channel_out][a_width - b_width + 1][a_width - b_width + 1]
                  double *bias); //[channel_out]
 
-/*__global__ void avgpool();
+__global__ void avgpool(int a_width, int amount,int channel,
+          double *matrix_a, //[channel][a_width][a_width]
+          double *matrix_b); //[channel][a_width/amount][a_width/amount]
 
-__global__ void fully_connected();
+/*__global__ void fully_connected();
 
 __global__ void sigmoid();
 
@@ -71,9 +73,6 @@ cudaFree(dev_output_conv1);
 cudaFree(dev_bias1);
 
 
-//LAYER 2
-
-
 for (int k = 0; k < 6; k++) {
 	for (int j = 0; j < 28; j++) {
 		for (int i = 0; i < 28; i++){
@@ -85,9 +84,13 @@ for (int k = 0; k < 6; k++) {
 	printf("\n");
 }
 
-
+//LAYER 2
 
 free(output_conv1);
+
+
+
+//LAYER 3
 
 cudaDeviceReset();
 
@@ -95,7 +98,7 @@ cudaDeviceReset();
 
 
 
-long double sigmoidl(long double n) {
+double sigmoidl( double n) {
 
     return (1 / (1 + powf(EULER_NUMBER_L, -n)));
 
@@ -153,5 +156,33 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
 		}
 
 	}
+
+}
+
+__global__ void avgpool(int a_width, int amount,int channel,
+          double *matrix_a, //[channel][a_width][a_width]
+          double *matrix_b){ //[channel][a_width/amount][a_width/amount]
+
+
+	int idx = blockDim.x * blockIdx.x + threadIdx.x;
+	int idy = blockDim.y * blockIdx.y + threadIdx.y;
+
+	int out_width = a_width/amount;
+	
+	__shared__  extern double s[];
+
+	//to shared memory (no ghost cells)
+
+	if(idx >= a_width || idy >= a_width) return;
+	
+	for(int c_in = 0; c_in < channel; c_in++){
+		s[ threadIdx.x + threadIdx.y * tile_size + c_in * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + c_in * a_width * a_width ];
+	}
+
+	__syncthreads();
+
+	//start computation
+
+
 
 }
