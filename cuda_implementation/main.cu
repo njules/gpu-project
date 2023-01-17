@@ -34,7 +34,7 @@ int main(){
 
 int threads = 32;
 dim3 block(threads,threads); //threads
-dim3 grid(6); //blocks
+dim3 grid(1); //blocks
 
 cudaSetDevice(0);
 
@@ -74,6 +74,16 @@ cudaFree(dev_bias1);
 //LAYER 2
 
 
+for (int k = 0; k < 6; k++) {
+	for (int j = 0; j < 28; j++) {
+		for (int i = 0; i < 28; i++){
+			printf("%0.2lf ",output_conv1[i + j * 28 + k * 28 * 28]);
+			
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
 
 
 
