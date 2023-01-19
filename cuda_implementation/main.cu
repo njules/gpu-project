@@ -43,9 +43,10 @@ cudaSetDevice(0);
 
 //LAYER 1
 
-int threads = 32;
-dim3 block_convo_1(threads,threads); //threads
-dim3 grid_convo_1(1); //blocks
+int threads = 13;
+int filter = 6;
+dim3 block_convo_1(threads,threads,filter); //threads
+dim3 grid_convo_1(3,3,1); //blocks
 
 double *dev_input_conv1, *dev_matrix_conv1, *dev_bias1, *dev_output_conv1;
 
@@ -65,7 +66,7 @@ cudaMemcpy( dev_matrix_conv1, conv1_weight, 5*5*3*6 * sizeof( double), cudaMemcp
 cudaMemcpy( dev_bias1, conv1_bias, 6 * sizeof( double), cudaMemcpyHostToDevice);
 
 //kernel
-convolution<<<grid_convo_1,block_convo_1, threads * threads * 3 * sizeof( double)>>>(32,5,3,6,threads,dev_input_conv1,dev_matrix_conv1,dev_output_conv1,dev_bias1);
+convolution<<<grid_convo_1,block_convo_1, threads * threads * filter * sizeof( double)>>>(32,5,3,6,threads,dev_input_conv1,dev_matrix_conv1,dev_output_conv1,dev_bias1);
 
 // Device to Host
 cudaMemcpy( output_conv1 , dev_output_conv1, 28 * 28 * 6 * sizeof( double), cudaMemcpyDeviceToHost);
@@ -91,9 +92,12 @@ cudaFree(dev_bias1);
 
 //LAYER 2
 
-threads = 28;
-dim3 block_pool_1(threads,threads); //threads
-dim3 grid_pool_1(1); //blocks
+// CAREFUL TO AVOID ISSUES KEEP THIS VALUE EVEN THANKS
+
+threads = 12;
+filter = 6;
+dim3 block_pool_1(threads,threads,filter); //threads
+dim3 grid_pool_1(3,3,1); //blocks
 
 double *dev_input_pool1, *dev_output_pool1;
 
@@ -111,7 +115,7 @@ cudaMemcpy( dev_input_pool1, output_conv1, 28*28*6* sizeof( double), cudaMemcpyH
 free(output_conv1);
 
 //kernel
-avgpool<<<grid_pool_1,block_pool_1, threads * threads * 6 * sizeof( double)>>>(28,2,6,threads,dev_input_pool1,dev_output_pool1);
+avgpool<<<grid_pool_1,block_pool_1, threads * threads * filter * sizeof( double)>>>(28,2,6,threads,dev_input_pool1,dev_output_pool1);
 
 // Device to Host
 cudaMemcpy( output_pool1 , dev_output_pool1, 14 * 14 * 6 * sizeof( double), cudaMemcpyDeviceToHost);
@@ -133,12 +137,12 @@ cudaFree(dev_output_pool1);
 }*/
 
 
-
 //LAYER 3
 
-threads = 14;
-dim3 block_convo_2(threads,threads); //threads
-dim3 grid_convo_2(1); //blocks
+threads = 8;
+filter = 16;
+dim3 block_convo_2(threads,threads,filter); //threads
+dim3 grid_convo_2(2,2,1); //blocks
 
 double *dev_input_conv2, *dev_matrix_conv2, *dev_bias2, *dev_output_conv2;
 
@@ -160,7 +164,7 @@ cudaMemcpy( dev_bias2, conv2_bias, 16 * sizeof( double), cudaMemcpyHostToDevice)
 free(output_pool1);
 
 //kernel
-convolution<<<grid_convo_2,block_convo_2, threads * threads * 6 * sizeof( double)>>>(14,5,6,16,threads,dev_input_conv2,dev_matrix_conv2,dev_output_conv2,dev_bias2);
+convolution<<<grid_convo_2,block_convo_2, threads * threads * filter * sizeof( double)>>>(14,5,6,16,threads,dev_input_conv2,dev_matrix_conv2,dev_output_conv2,dev_bias2);
 
 // Device to Host
 cudaMemcpy( output_conv2 , dev_output_conv2, 10 * 10 * 16 * sizeof( double), cudaMemcpyDeviceToHost);
@@ -186,9 +190,10 @@ cudaFree(dev_bias2);
 //LAYER 4
 
 
-threads = 10;
-dim3 block_pool_2(threads,threads); //threads
-dim3 grid_pool_2(1); //blocks
+threads = 8;
+filter = 16;
+dim3 block_pool_2(threads,threads,filter); //threads
+dim3 grid_pool_2(2,2,1); //blocks
 
 double *dev_input_pool2, *dev_output_pool2;
 
@@ -206,7 +211,7 @@ cudaMemcpy( dev_input_pool2, output_conv2, 10*10*16* sizeof( double), cudaMemcpy
 free(output_conv2);
 
 //kernel
-avgpool<<<grid_pool_2,block_pool_2, threads * threads * 16 * sizeof( double)>>>(10,2,16,threads,dev_input_pool2,dev_output_pool2);
+avgpool<<<grid_pool_2,block_pool_2, threads * threads * filter * sizeof( double)>>>(10,2,16,threads,dev_input_pool2,dev_output_pool2);
 
 // Device to Host
 cudaMemcpy( output_pool2 , dev_output_pool2, 5 * 5 * 16 * sizeof( double), cudaMemcpyDeviceToHost);
@@ -229,9 +234,10 @@ cudaFree(dev_output_pool2);
 
 //LAYER 5
 
-threads = 5;
-dim3 block_convo_3(threads,threads); //threads
-dim3 grid_convo_3(1); //blocks
+threads = 2;
+filter = 60;
+dim3 block_convo_3(threads,threads,filter); //threads
+dim3 grid_convo_3(4,4,2); //blocks
 
 double *dev_input_conv3, *dev_matrix_conv3, *dev_bias3, *dev_output_conv3;
 
@@ -253,7 +259,7 @@ cudaMemcpy( dev_bias3, conv3_bias, 120 * sizeof( double), cudaMemcpyHostToDevice
 free(output_pool2);
 
 //kernel
-convolution_nosigmoid<<<grid_convo_3,block_convo_3, threads * threads * 16 * sizeof( double)>>>(5,5,16,120,threads,dev_input_conv3,dev_matrix_conv3,dev_output_conv3,dev_bias3);
+convolution_nosigmoid<<<grid_convo_3,block_convo_3, threads * threads * filter * sizeof( double)>>>(5,5,16,120,threads,dev_input_conv3,dev_matrix_conv3,dev_output_conv3,dev_bias3);
 
 // Device to Host
 cudaMemcpy( output_conv3 , dev_output_conv3, 1 * 1 * 120 * sizeof( double), cudaMemcpyDeviceToHost);
@@ -275,7 +281,7 @@ printf("\n");
 
 
 
-
+free(output_conv3);
 
 cudaDeviceReset();
 
@@ -288,6 +294,7 @@ __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
 
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
 	int idy = blockDim.y * blockIdx.y + threadIdx.y;
+	int idz = blockDim.z * blockIdx.z + threadIdx.z;
 
 	int out_width = a_width/amount;
 	
@@ -295,20 +302,23 @@ __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
 
 	//to shared memory (no ghost cells)
 
-	if(idx >= a_width || idy >= a_width) return;
-	
-	for(int c_in = 0; c_in < channel; c_in++){
-		s[ threadIdx.x + threadIdx.y * tile_size + c_in * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + c_in * a_width * a_width ];
+	if(!(idx >= a_width || idy >= a_width)){
+		if(threadIdx.z < channel){
+			s[ threadIdx.x + threadIdx.y * tile_size + threadIdx.z * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + idz * a_width * a_width ];
+		}
 	}
+	
 
 	__syncthreads();
 
+	if(idx >= a_width || idy >= a_width || idz >= channel) return;
+
 	//start computation
 
-	if( threadIdx.x < tile_size && threadIdx.y < tile_size){
+	if( threadIdx.x < tile_size && threadIdx.y < tile_size && threadIdx.z < channel){
 		if( threadIdx.x % 2 == 0 && threadIdx.y % 2 == 0 ){
 		
-			for(int c = 0; c < channel; c++){
+			//for(int c = 0; c < channel; c++){
 				double res = 0;
 				for(int i = 0; i < amount; i++){
 					for(int j = 0; j < amount; j++){
@@ -316,15 +326,15 @@ __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
 						int ii = threadIdx.x + i;
 						int jj = threadIdx.y + j;
 
-						res += s[ii + jj * tile_size + c * tile_size * tile_size];
+						res += s[ii + jj * tile_size + threadIdx.z * tile_size * tile_size];
 						
 					}
 				}
-				matrix_b[ (idx/amount) + (idy/amount) * out_width + c * out_width * out_width ] = res / (amount * amount);
+				matrix_b[ (idx/amount) + (idy/amount) * out_width + idz * out_width * out_width ] = res / (amount * amount);
 			}
 			
 		
-		}
+		//}
 	}
 
 
@@ -339,49 +349,59 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
 
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
 	int idy = blockDim.y * blockIdx.y + threadIdx.y;
+	int idz = blockDim.z * blockIdx.z + threadIdx.z;
 
 	int kCenter = b_width/2;
 	int out_width = a_width - b_width + 1;
 	
-	__shared__  extern double s[];
+	extern __shared__  double s[];
 
 	//to shared memory (no ghost cells)
 
-	if(idx >= a_width || idy >= a_width) return;
-	
-	for(int c_in = 0; c_in < channel_in; c_in++){
-		s[ threadIdx.x + threadIdx.y * tile_size + c_in * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + c_in * a_width * a_width ];
+	if(!(idx >= a_width || idy >= a_width)){
+		if(threadIdx.z < channel_in){
+			s[ threadIdx.x + threadIdx.y * tile_size + threadIdx.z * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + threadIdx.z * a_width * a_width ];
+		}
 	}
-	
 
 	__syncthreads();
 
+	if(idx >= a_width || idy >= a_width || idz >= channel_out) return;
+
 	//start computation
 
-	if( threadIdx.x < tile_size && threadIdx.y < tile_size){	
+	if( threadIdx.x < tile_size && threadIdx.y < tile_size && threadIdx.z < channel_out){	
 		if(idx >= kCenter && idx < a_width - kCenter && idy >= kCenter && idy < a_width - kCenter){
 			
-		
-			for(int c_out = 0; c_out < channel_out; c_out++){
-				double res = bias[c_out];
+	
+			double res = bias[idz];
 
-				for(int i = 0; i < b_width; i++){
-					for(int j = 0; j < b_width; j++){
+			for(int i = 0; i < b_width; i++){
+				for(int j = 0; j < b_width; j++){
 
-						int ii = threadIdx.x + i - kCenter;
-						int jj = threadIdx.y + j - kCenter;
+					int ii = threadIdx.x + i - kCenter;
+					int jj = threadIdx.y + j - kCenter;
 
+					if(threadIdx.x > (b_width/2) && threadIdx.x < tile_size-(b_width/2) && threadIdx.y > (b_width/2) && threadIdx.y < tile_size-(b_width/2)){
 						for(int c_in = 0; c_in < channel_in; c_in++){
-							res += s[ii + jj * tile_size + c_in * tile_size * tile_size] * matrix_b[i + j * b_width + c_in * b_width * b_width + c_out * channel_in * b_width * b_width];
+							res += s[ii + jj * tile_size + c_in * tile_size * tile_size] * matrix_b[i + j * b_width + c_in * b_width * b_width + idz * channel_in * b_width * b_width];
 						}
 					}
+					else{
+
+						for(int c_in = 0; c_in < channel_in; c_in++){
+							res += matrix_a[ (idx + i - kCenter) + (idy + j - kCenter) * a_width + c_in * a_width * a_width ] * matrix_b[i + j * b_width + c_in * b_width * b_width + idz * channel_in * b_width * b_width];
+						}
+
+					}
 				}
-
-				res = 1 / (1 + powf(EULER_NUMBER_F, -res));
-
-				matrix_c[ (idx - kCenter) + (idy - kCenter) * out_width + c_out * out_width * out_width ] = res;
-
 			}
+
+			res = 1 / (1 + powf(EULER_NUMBER_F, -res));
+
+			matrix_c[ (idx - kCenter) + (idy - kCenter) * out_width + idz * out_width * out_width ] = res;
+
+		
 		}
 
 	}
@@ -396,52 +416,63 @@ __global__ void convolution_nosigmoid(int a_width, int b_width, int channel_in, 
 
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
 	int idy = blockDim.y * blockIdx.y + threadIdx.y;
+	int idz = blockDim.z * blockIdx.z + threadIdx.z;
 
 	int kCenter = b_width/2;
 	int out_width = a_width - b_width + 1;
 	
-	__shared__  extern double s[];
+	extern __shared__  double s[];
 
 	//to shared memory (no ghost cells)
 
-	if(idx >= a_width || idy >= a_width) return;
-	
-	for(int c_in = 0; c_in < channel_in; c_in++){
-		s[ threadIdx.x + threadIdx.y * tile_size + c_in * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + c_in * a_width * a_width ];
+	if(!(idx >= a_width || idy >= a_width)){
+		if(threadIdx.z < channel_in){
+			s[ threadIdx.x + threadIdx.y * tile_size + threadIdx.z * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + threadIdx.z * a_width * a_width ];
+		}
 	}
-	
 
 	__syncthreads();
 
+	if(idx >= a_width || idy >= a_width || idz >= channel_out) return;
+
 	//start computation
 
-	if( threadIdx.x < tile_size && threadIdx.y < tile_size){	
+	if( threadIdx.x < tile_size && threadIdx.y < tile_size && threadIdx.z < channel_out){	
 		if(idx >= kCenter && idx < a_width - kCenter && idy >= kCenter && idy < a_width - kCenter){
 			
-		
-			for(int c_out = 0; c_out < channel_out; c_out++){
-				 double res = bias[c_out];
+	
+			double res = bias[idz];
 
-				for(int i = 0; i < b_width; i++){
-					for(int j = 0; j < b_width; j++){
+			for(int i = 0; i < b_width; i++){
+				for(int j = 0; j < b_width; j++){
 
-						int ii = threadIdx.x + i - kCenter;
-						int jj = threadIdx.y + j - kCenter;
+					int ii = threadIdx.x + i - kCenter;
+					int jj = threadIdx.y + j - kCenter;
 
+					if(threadIdx.x > (b_width/2) && threadIdx.x < tile_size-(b_width/2) && threadIdx.y > (b_width/2) && threadIdx.y < tile_size-(b_width/2)){
 						for(int c_in = 0; c_in < channel_in; c_in++){
-							res += s[ii + jj * tile_size + c_in * tile_size * tile_size] * matrix_b[i + j * b_width + c_in * b_width * b_width + c_out * channel_in * b_width * b_width];
+							res += s[ii + jj * tile_size + c_in * tile_size * tile_size] * matrix_b[i + j * b_width + c_in * b_width * b_width + idz * channel_in * b_width * b_width];
 						}
 					}
-				}
-				
-				matrix_c[ (idx - kCenter) + (idy - kCenter) * out_width + c_out * out_width * out_width ] = res;
+					else{
 
+						for(int c_in = 0; c_in < channel_in; c_in++){
+							res += matrix_a[ (idx + i - kCenter) + (idy + j - kCenter) * a_width + c_in * a_width * a_width ] * matrix_b[i + j * b_width + c_in * b_width * b_width + idz * channel_in * b_width * b_width];
+						}
+
+					}
+				}
 			}
+
+			matrix_c[ (idx - kCenter) + (idy - kCenter) * out_width + idz * out_width * out_width ] = res;
+
+		
 		}
 
 	}
 
 }
+
 
 
 
