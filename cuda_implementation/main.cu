@@ -292,12 +292,15 @@ printf("\n");
 	// define layer sizes
 	int NCHANNEL_CONV3 = 120;
 	int NFEATS_FC1 = 84;
-	int NFEATS_FC2 = 10;
+	//int NFEATS_FC2 = 10;
 
 	// TODO: temporary for testing:
-	output_conv3 = test_inputs;
+	// output_conv3 = test_inputs; ----------this line was breaking stuff---------- 
+	// just use the output_conv3 from before, OR just replace this code in line 325:
+	// cudaMemcpy(conv3_out_dev, test_inputs, conv3_out_size, cudaMemcpyHostToDevice);
+
 	for (int i = 0; i < 120; i++){
-		printf("%lf ",output_conv3[i]);
+		printf("%lf ",test_inputs[i]);
 	}
 	printf("\n");
 	printf("\n");
@@ -319,7 +322,7 @@ printf("\n");
 	cudaMalloc((void**)&fc1_bias_dev, fc1_bias_size);
 	cudaMalloc((void**)&fc1_out_dev, fc1_out_size);
 
-	cudaMemcpy(conv3_out_dev, output_conv3, conv3_out_size, cudaMemcpyHostToDevice);
+	cudaMemcpy(conv3_out_dev, test_inputs, conv3_out_size, cudaMemcpyHostToDevice);
 	cudaMemcpy(fc1_weights_dev, fc1_weight, fc1_weights_size, cudaMemcpyHostToDevice);
 	cudaMemcpy(fc1_bias_dev, fc1_bias, fc1_bias_size, cudaMemcpyHostToDevice);
 
@@ -338,9 +341,6 @@ printf("\n");
 	for (int i = 0; i < NFEATS_FC1; i++){
 		printf("%lf ",test_outs[i]);
 	}
-	printf("\n");
-	printf("\n");
-	printf("Debugging done layer\n");
 
 
 free(output_conv3);
@@ -602,14 +602,10 @@ __global__ void linear_layer(
 
 	if (idx >= n_outfeats) return;
 
-	double res = bias[idx];
+	output[idx] = bias[idx];
 
-	// TODO: debugging; for now just try to set bias
-	output[idx] = res;
-	return;
-
-	for (int i=0; i<n_infeats; i++) {
+	/*for (int i=0; i<n_infeats; i++) {
 		res += weights[idx*n_infeats + i] *  input[i];
 	}
-	output[idx] = res;
+	output[idx] = res;*/
 }
