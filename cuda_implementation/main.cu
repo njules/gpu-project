@@ -6,6 +6,8 @@
 #include "weights_vectors.h"
 #include "input_vector.h"
 
+#include "test.h"
+
 #include <cuda_runtime.h>
 
 #define EULER_NUMBER 2.71828
@@ -31,11 +33,18 @@ __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
           double *matrix_b); //[channel][a_width/amount][a_width/amount]
 
 
-/*__global__ void fully_connected();
+__global__ void linear_layer(
+	int n_infeats,
+	int n_outfeats,
+	double *input,
+	double *weights,
+	double *bias,
+	double *output
+);
 
 
 
-void softmax();*/
+/*void softmax();*/
 
 int main(){
 
@@ -271,14 +280,67 @@ cudaFree(dev_matrix_conv3);
 cudaFree(dev_output_conv3);
 cudaFree(dev_bias3);
 
-for (int i = 0; i < 120; i++){
-	printf("%lf ",output_conv3[i]);
-}
+// for (int i = 0; i < 120; i++){
+// 	printf("%lf ",output_conv3[i]);
+// }
 
 printf("\n");
 
 //LAYER 6
 
+	// TODO: start Julian
+	// define layer sizes
+	int NCHANNEL_CONV3 = 120;
+	int NFEATS_FC1 = 84;
+	int NFEATS_FC2 = 10;
+
+	// TODO: temporary for testing:
+	output_conv3 = test_inputs;
+	for (int i = 0; i < 120; i++){
+		printf("%lf ",output_conv3[i]);
+	}
+	printf("\n");
+	printf("\n");
+
+	// define number of threads and blocks
+	threads = NFEATS_FC1;
+	int blocks = 1;
+
+	// allocate and populate memory for fc1
+	double *conv3_out_dev, *fc1_weights_dev, *fc1_bias_dev, *fc1_out_dev;
+
+	int conv3_out_size = NCHANNEL_CONV3 * sizeof(double);
+	int fc1_weights_size = NCHANNEL_CONV3 * NFEATS_FC1 * sizeof(double);
+	int fc1_bias_size = NFEATS_FC1 * sizeof(double);
+	int fc1_out_size = NFEATS_FC1 * sizeof(double);
+
+	cudaMalloc((void**)&conv3_out_dev, conv3_out_size);
+	cudaMalloc((void**)&fc1_weights_dev, fc1_weights_size);
+	cudaMalloc((void**)&fc1_bias_dev, fc1_bias_size);
+	cudaMalloc((void**)&fc1_out_dev, fc1_out_size);
+
+	cudaMemcpy(conv3_out_dev, output_conv3, conv3_out_size, cudaMemcpyHostToDevice);
+	cudaMemcpy(fc1_weights_dev, fc1_weight, fc1_weights_size, cudaMemcpyHostToDevice);
+	cudaMemcpy(fc1_bias_dev, fc1_bias, fc1_bias_size, cudaMemcpyHostToDevice);
+
+	// layer computations
+	linear_layer<<<blocks, threads>>>(NCHANNEL_CONV3, NFEATS_FC1, conv3_out_dev, fc1_weights_dev, fc1_bias_dev, fc1_out_dev);
+
+	// free input and parameter memory on device
+	cudaFree(conv3_out_dev);
+	cudaFree(fc1_weights_dev);
+	cudaFree(fc1_bias_dev);
+
+	// TODO: temporary for testing:
+	double *test_outs;
+	test_outs = ( double*)malloc(fc1_out_size);
+	cudaMemcpy(test_outs , fc1_out_dev, fc1_out_size, cudaMemcpyDeviceToHost);
+	for (int i = 0; i < NFEATS_FC1; i++){
+		printf("%lf ",test_outs[i]);
+	}
+	printf("\n");
+	printf("\n");
+	printf("Debugging done layer\n");
 
 
 free(output_conv3);
@@ -519,3 +581,35 @@ __global__ void sigmoid(int a_width,int channel,
 }
 
 */
+
+__global__ void linear_layer(
+	int n_infeats,
+	int n_outfeats,
+	double *input,
+	double *weights,
+	double *bias,
+	double *output
+){
+	/*
+		Dimensions:
+			input		[n_infeats]
+			weights		[n_infeats, n_outfeats]
+			bias		[n_outfeats]
+			output		[n_outfeats]
+	*/
+
+	int idx = threadIdx.x;
+
+	if (idx >= n_outfeats) return;
+
+	double res = bias[idx];
+
+	// TODO: debugging; for now just try to set bias
+	output[idx] = res;
+	return;
+
+	for (int i=0; i<n_infeats; i++) {
+		res += weights[idx*n_infeats + i] *  input[i];
+	}
+	output[idx] = res;
+}
