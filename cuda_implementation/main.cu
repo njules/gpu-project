@@ -6,8 +6,6 @@
 #include "weights_vectors.h"
 #include "input_vector.h"
 
-#include "test.h"
-
 #include <cuda_runtime.h>
 
 #define EULER_NUMBER 2.71828
@@ -32,7 +30,6 @@ __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
           double *matrix_a, //[channel][a_width][a_width]
           double *matrix_b); //[channel][a_width/amount][a_width/amount]
 
-
 __global__ void linear_layer(
 	int n_infeats,
 	int n_outfeats,
@@ -41,6 +38,14 @@ __global__ void linear_layer(
 	double *bias,
 	double *output
 );
+
+__global__ void sigmoid_activation(
+	int n_feats,
+	double *input,
+	double *output
+);
+
+void softmax(size_t input_len,  double *input);
 
 
 
@@ -280,27 +285,25 @@ cudaFree(dev_matrix_conv3);
 cudaFree(dev_output_conv3);
 cudaFree(dev_bias3);
 
-// for (int i = 0; i < 120; i++){
-// 	printf("%lf ",output_conv3[i]);
-// }
+/*
+for (int i = 0; i < 120; i++){
+	printf("%lf ",output_conv3[i]);
+}
+*/
 
 printf("\n");
 
-//LAYER 6
+	// -------------------------- FC1 -----------------------------------------
 
-	// TODO: start Julian
 	// define layer sizes
 	int NCHANNEL_CONV3 = 120;
 	int NFEATS_FC1 = 84;
-	//int NFEATS_FC2 = 10;
+	int NFEATS_FC2 = 10;
 
-	// TODO: temporary for testing:
-	// output_conv3 = test_inputs; ----------this line was breaking stuff---------- 
-	// just use the output_conv3 from before, OR just replace this code in line 325:
-	// cudaMemcpy(conv3_out_dev, test_inputs, conv3_out_size, cudaMemcpyHostToDevice);
-
-	for (int i = 0; i < 120; i++){
-		printf("%lf ",test_inputs[i]);
+	// TODO: verify correct input to fc1
+	printf("CONV3 outs:\n");
+	for (int i = 0; i < NCHANNEL_CONV3; i++){
+		printf("%lf ", output_conv3[i]);
 	}
 	printf("\n");
 	printf("\n");
@@ -322,7 +325,7 @@ printf("\n");
 	cudaMalloc((void**)&fc1_bias_dev, fc1_bias_size);
 	cudaMalloc((void**)&fc1_out_dev, fc1_out_size);
 
-	cudaMemcpy(conv3_out_dev, test_inputs, conv3_out_size, cudaMemcpyHostToDevice);
+	cudaMemcpy(conv3_out_dev, output_conv3, conv3_out_size, cudaMemcpyHostToDevice);
 	cudaMemcpy(fc1_weights_dev, fc1_weight, fc1_weights_size, cudaMemcpyHostToDevice);
 	cudaMemcpy(fc1_bias_dev, fc1_bias, fc1_bias_size, cudaMemcpyHostToDevice);
 
@@ -334,19 +337,102 @@ printf("\n");
 	cudaFree(fc1_weights_dev);
 	cudaFree(fc1_bias_dev);
 
-	// TODO: temporary for testing:
-	double *test_outs;
-	test_outs = ( double*)malloc(fc1_out_size);
-	cudaMemcpy(test_outs , fc1_out_dev, fc1_out_size, cudaMemcpyDeviceToHost);
+	// TODO: verify correct output of fc1:
+	double *test_fc1;
+	test_fc1 = ( double*)malloc(fc1_out_size);
+	cudaMemcpy(test_fc1 , fc1_out_dev, fc1_out_size, cudaMemcpyDeviceToHost);
+	printf("FC1 outs:\n");
 	for (int i = 0; i < NFEATS_FC1; i++){
-		printf("%lf ",test_outs[i]);
+		printf("%lf ",test_fc1[i]);
 	}
+	printf("\n");
+	printf("\n");
+
+	// -------------------------- sigmoid -------------------------------------
+
+	// allocate memory for fc1 sigmoid output
+	double *fc1sigmoid_out_dev;
+	cudaMalloc((void**)&fc1sigmoid_out_dev, fc1_out_size);
+
+	// sigmoid activation function
+	sigmoid_activation<<<blocks, threads>>>(NFEATS_FC1, fc1_out_dev, fc1sigmoid_out_dev);
+
+	// free input memory on device
+	cudaFree(fc1_out_dev);
+
+	// TODO: verify correct output of fc1 sigmoid:
+	double *test_fc1_sigmoid;
+	test_fc1_sigmoid = ( double*)malloc(fc1_out_size);
+	cudaMemcpy(test_fc1_sigmoid , fc1sigmoid_out_dev, fc1_out_size, cudaMemcpyDeviceToHost);
+	printf("FC1 sigmoid outs:\n");
+	for (int i = 0; i < NFEATS_FC1; i++){
+		printf("%lf ",test_fc1_sigmoid[i]);
+	}
+	printf("\n");
+	printf("\n");
+
+	// -------------------------- FC2 -----------------------------------------
+
+	// define number of threads and blocks
+	threads = NFEATS_FC2;
+	blocks = 1;
+
+	// allocate and populate memory for fc2
+	double *fc2_weights_dev, *fc2_bias_dev, *fc2_out_dev;
+
+	int fc2_weights_size = NFEATS_FC1 * NFEATS_FC2 * sizeof(double);
+	int fc2_bias_size = NFEATS_FC2 * sizeof(double);
+	int fc2_out_size = NFEATS_FC2 * sizeof(double);
+
+	cudaMalloc((void**)&fc2_weights_dev, fc2_weights_size);
+	cudaMalloc((void**)&fc2_bias_dev, fc2_bias_size);
+	cudaMalloc((void**)&fc2_out_dev, fc2_out_size);
+
+	cudaMemcpy(fc2_weights_dev, fc2_weight, fc2_weights_size, cudaMemcpyHostToDevice);
+	cudaMemcpy(fc2_bias_dev, fc2_bias, fc2_bias_size, cudaMemcpyHostToDevice);
+
+	// layer computations
+	linear_layer<<<blocks, threads>>>(NFEATS_FC1, NFEATS_FC2, fc1sigmoid_out_dev, fc2_weights_dev, fc2_bias_dev, fc2_out_dev);
+
+	// free input and parameter memory on device
+	cudaFree(fc1sigmoid_out_dev);
+	cudaFree(fc2_weights_dev);
+	cudaFree(fc2_bias_dev);
+
+	// TODO: verify correct output of fc2:
+	double *test_fc2;
+	test_fc2 = ( double*)malloc(fc2_out_size);
+	cudaMemcpy(test_fc2 , fc2_out_dev, fc2_out_size, cudaMemcpyDeviceToHost);
+	printf("FC2 outs:\n");
+	for (int i = 0; i < NFEATS_FC2; i++){
+		printf("%lf ",test_fc2[i]);
+	}
+	printf("\n");
+	printf("\n");
+
+	// -------------------------- softmax -------------------------------------
+
+	// move final layer output to host
+	double *fc2_out = (double*) malloc(fc2_out_size);
+	cudaMemcpy(fc2_out , fc2_out_dev, fc2_out_size, cudaMemcpyDeviceToHost);
+	cudaFree(fc2_out_dev);
+
+	// perform softmax computation
+	softmax(NFEATS_FC2, fc2_out);
 
 
-free(output_conv3);
+	// print final class probabilities:
+	printf("Final class probabilities:\n");
+	for (int i = 0; i < NFEATS_FC2; i++){
+		printf("%lf ", fc2_out[i]);
+	}
+	printf("\n");
+	
 
-cudaDeviceReset();
+	// TODO: free memory
+	free(output_conv3);
 
+	cudaDeviceReset();
 }
 
 __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
@@ -603,9 +689,48 @@ __global__ void linear_layer(
 	if (idx >= n_outfeats) return;
 
 	output[idx] = bias[idx];
-
-	/*for (int i=0; i<n_infeats; i++) {
-		res += weights[idx*n_infeats + i] *  input[i];
+	for (int i=0; i<n_infeats; i++) {
+		output[idx] += weights[idx*n_infeats + i] *  input[i];
 	}
-	output[idx] = res;*/
+}
+
+
+__global__ void sigmoid_activation(
+	int n_feats,
+	double *input,
+	double *output
+){
+	/*
+		Dimensions:
+			input		[n_feats]
+			output		[n_feats]
+	*/
+
+	int idx = threadIdx.x;
+
+	if (idx >= n_feats) return;
+
+	output[idx] = 1 / (1 + powf(EULER_NUMBER_F, -input[idx]));
+}
+
+
+void softmax(size_t input_len, double *input) {
+	assert(input);
+
+	double m = -INFINITY;
+	for (size_t i = 0; i < input_len; i++) {
+		if (input[i] > m) {
+			m = input[i];
+		}
+	}
+
+	double sum = 0.0;
+	for (size_t i = 0; i < input_len; i++) {
+		sum += expf(input[i] - m);
+	}
+
+	double offset = m + logf(sum);
+	for (size_t i = 0; i < input_len; i++) {
+		input[i] = expf(input[i] - offset);
+	}
 }
