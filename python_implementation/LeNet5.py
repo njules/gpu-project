@@ -59,7 +59,6 @@ def load_model_npy(model: nn.Module, path: str) -> nn.Module:
 
   for layer in state_dict:
     file_path = os.path.join(path, layer) + '.npy'
-    print(f"deb: {path}, {layer}, {file_path} ")
     state_dict[layer] = torch.Tensor(np.load(file_path))
 
   model.load_state_dict(state_dict)

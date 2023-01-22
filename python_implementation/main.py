@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.profiler import profile, record_function, ProfilerActivity
 from torch.utils.data import DataLoader
 import torchvision
 import torchvision.transforms as transforms
@@ -20,7 +21,7 @@ ssl._create_default_https_context = ssl._create_unverified_context  # for downlo
 np.set_printoptions(threshold=sys.maxsize)  # for saving weights in txt file
 
 
-DEVICE = 'cpu'  # 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = 'cuda'  # 'cuda' if torch.cuda.is_available() else 'cpu'
 LEARNING_RATE = 0.01
 BATCH_SIZE = 32
 N_EPOCHS = 15
@@ -100,15 +101,20 @@ def main():
   # np.save(f'{file_path}.npy', image.numpy())
   # with open(f'{file_path}.txt', 'w') as save_file:
   #   save_file.write(np.array2string(image.numpy(), separator=','))
-  # image = torch.Tensor(np.load(f'{file_path}.npy'))
 
   ################# measure time ##########################
-  # image = image.unsqueeze(dim=0)
-  # start_time = time.time()
-  # _, output = model(image)
-  # duration = time.time() - start_time
-  # prediction = CLASSES[output.max(dim=1).indices]
-  # print(f"Took {duration} seconds to make prediction \"{prediction}\" for image. ")
+  image = torch.Tensor(np.load('test_images/frog.npy'))
+  image = image.unsqueeze(dim=0)
+  image = image.to(DEVICE)
+  model = model.to(DEVICE)
+  with profile(record_shapes=True, profile_memory=True, with_flops=True) as prof:
+    _, output = model(image)
+  prediction = CLASSES[output.max(dim=1).indices]
+  print(f"Profiling single forward pass of {prediction} image. ")
+  print(prof.key_averages())
+  prof.export_chrome_trace("python_implementation/trace.json")
+
+
 
 
 if __name__ == '__main__':
