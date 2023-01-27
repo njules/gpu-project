@@ -1,0 +1,24 @@
+==34289== NVPROF is profiling process 34289, command: ./main.out 1
+Final class probabilities:
+0.102631 0.084742 0.113264 0.100747 0.102479 0.089029 0.115081 0.090591 0.096499 0.104937 
+==34289== Profiling application: ./main.out 1
+==34289== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   98.66%  87.132us        11  7.9210us     608ns  60.670us  [CUDA memcpy HtoD]
+                    1.34%  1.1840us         1  1.1840us  1.1840us  1.1840us  [CUDA memcpy DtoH]
+      API calls:   83.42%  85.241ms         1  85.241ms  85.241ms  85.241ms  cudaSetDevice
+                   15.22%  15.555ms         1  15.555ms  15.555ms  15.555ms  cudaDeviceReset
+                    0.36%  370.11us         1  370.11us  370.11us  370.11us  cuDeviceGetName
+                    0.31%  316.25us        12  26.354us  5.4220us  79.540us  cudaMemcpy
+                    0.24%  246.55us       114  2.1620us     108ns  95.108us  cuDeviceGetAttribute
+                    0.21%  218.77us        24  9.1150us  1.6060us  142.02us  cudaFree
+                    0.14%  146.93us        24  6.1220us  1.6010us  82.257us  cudaMalloc
+                    0.07%  74.213us         1  74.213us  74.213us  74.213us  cuLibraryLoadData
+                    0.01%  7.8780us         1  7.8780us  7.8780us  7.8780us  cuDeviceGetPCIBusId
+                    0.00%  3.1590us         8     394ns     229ns     687ns  cudaLaunchKernel
+                    0.00%  1.1260us         3     375ns     195ns     730ns  cuDeviceGetCount
+                    0.00%  1.0570us         1  1.0570us  1.0570us  1.0570us  cuDeviceTotalMem
+                    0.00%     586ns         2     293ns     114ns     472ns  cuDeviceGet
+                    0.00%     266ns         1     266ns     266ns     266ns  cuModuleGetLoadingMode
+                    0.00%     209ns         1     209ns     209ns     209ns  cuDeviceGetUuid
+==34289== Generated result file: /home/julian/Documents/gpu-project/cuda_implementation/c.nvprof
