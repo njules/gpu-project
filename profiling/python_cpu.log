@@ -1,0 +1,33 @@
+Files already downloaded and verified
+Files already downloaded and verified
+Profiling single forward pass of frog image. 
+----------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                        Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg       CPU Mem  Self CPU Mem    # of Calls  Total KFLOPs  
+----------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+                aten::conv2d         0.00%      22.000us         0.12%       1.797ms     599.000us      25.09 Kb           0 b             3      1281.600  
+           aten::convolution         0.00%      63.000us         0.12%       1.775ms     591.667us      25.09 Kb           0 b             3            --  
+          aten::_convolution         0.01%      81.000us         0.11%       1.712ms     570.667us      25.09 Kb           0 b             3            --  
+    aten::mkldnn_convolution         0.11%       1.610ms         0.11%       1.631ms     543.667us      25.09 Kb           0 b             3            --  
+                 aten::empty         0.00%      18.000us         0.00%      18.000us       3.000us      25.09 Kb      25.09 Kb             6            --  
+           aten::as_strided_         0.00%       3.000us         0.00%       3.000us       1.000us           0 b           0 b             3            --  
+               aten::sigmoid         0.01%      78.000us         0.01%      78.000us      26.000us      24.95 Kb      24.95 Kb             3            --  
+                    [memory]         0.00%       0.000us         0.00%       0.000us       0.000us     -24.95 Kb     -24.95 Kb             3            --  
+            aten::avg_pool2d         0.00%      71.000us         0.00%      71.000us      35.500us       6.16 Kb       6.16 Kb             2            --  
+               aten::flatten         0.00%      15.000us         0.00%      27.000us      27.000us           0 b           0 b             1            --  
+        aten::_reshape_alias         0.00%      12.000us         0.00%      12.000us      12.000us           0 b           0 b             1            --  
+                aten::linear         0.00%      37.000us         0.01%     203.000us     101.500us         376 b           0 b             2            --  
+                     aten::t         0.00%      19.000us         0.00%      31.000us      15.500us           0 b           0 b             2            --  
+             aten::transpose         0.00%       9.000us         0.00%      12.000us       6.000us           0 b           0 b             2            --  
+            aten::as_strided         0.00%       4.000us         0.00%       4.000us       1.000us           0 b           0 b             4            --  
+                 aten::addmm         0.01%     125.000us         0.01%     135.000us      67.500us         376 b         376 b             2        21.840  
+                aten::expand         0.00%       3.000us         0.00%       4.000us       2.000us           0 b           0 b             2            --  
+                 aten::copy_         0.00%       6.000us         0.00%       6.000us       3.000us           0 b           0 b             2            --  
+          aten::resolve_conj         0.00%       0.000us         0.00%       0.000us       0.000us           0 b           0 b             4            --  
+               aten::softmax         0.00%       8.000us         0.00%      24.000us      24.000us          40 b           0 b             1            --  
+              aten::_softmax         0.00%      16.000us         0.00%      16.000us      16.000us          40 b          40 b             1            --  
+          cudaGetDeviceCount         0.01%      97.000us         0.01%      97.000us      97.000us           0 b           0 b             1            --  
+     cudaGetDeviceProperties         0.03%     467.000us         0.03%     467.000us     467.000us           0 b           0 b             1            --  
+       cudaDeviceSynchronize        99.82%        1.507s        99.82%        1.507s        1.507s           0 b           0 b             1            --  
+----------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+Self CPU time total: 1.510s
+

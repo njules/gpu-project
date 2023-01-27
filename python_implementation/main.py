@@ -112,7 +112,7 @@ def main():
   prediction = CLASSES[output.max(dim=1).indices]
   print(f"Profiling single forward pass of {prediction} image. ")
   print(prof.key_averages())
-  prof.export_chrome_trace("python_implementation/trace.json")
+  prof.export_chrome_trace("profiling/python_gputrace.json")
 
 
 

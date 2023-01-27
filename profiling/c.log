@@ -1,0 +1,22 @@
+Convolution 1		took 10004 microseconds
+Activation 1		took 162 microseconds
+Pooling 1		took 124 microseconds
+Convolution 2		took 2990 microseconds
+Sigmoid 2		took 38 microseconds
+Pooling 2		took 35 microseconds
+Convolution 3		took 608 microseconds
+Flatten 		took 0 microseconds
+Linear 1		took 50 microseconds
+Sigmoid 3		took 2 microseconds
+Linear 2		took 4 microseconds
+Softmax 		took 1 microseconds
+0.004166 out 0
+0.001107 out 1
+0.027000 out 2
+0.274212 out 3
+0.061046 out 4
+0.264751 out 5
+0.320666 out 6
+0.017843 out 7
+0.024738 out 8
+0.004470 out 9
