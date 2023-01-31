@@ -13,26 +13,26 @@
 #define filter_size 5
 
 void convolution(int a_width, int b_width, int channel_in, int channel_out,
-                 double matrix_a[channel_in][a_width][a_width], 
-                 double matrix_b[channel_out][channel_in][b_width][b_width], 
-                 double matrix_c[channel_out][a_width - b_width + 1][a_width - b_width + 1],
-                 double bias[channel_out]);
+                 float matrix_a[channel_in][a_width][a_width], 
+                 float matrix_b[channel_out][channel_in][b_width][b_width], 
+                 float matrix_c[channel_out][a_width - b_width + 1][a_width - b_width + 1],
+                 float bias[channel_out]);
 
 void avgpool(int a_width, int amount,int channel,
-          double matrix_a[channel][a_width][a_width],
-          double matrix_b[channel][a_width/amount][a_width/amount]);
+          float matrix_a[channel][a_width][a_width],
+          float matrix_b[channel][a_width/amount][a_width/amount]);
 
 void fully_connected(int a_width, int c_width,
-                    double  matrix_a[a_width],
-                    double  matrix_b[c_width][a_width],
-                    double  matrix_c[c_width],
-                    double  bias[c_width]);
+                    float  matrix_a[a_width],
+                    float  matrix_b[c_width][a_width],
+                    float  matrix_c[c_width],
+                    float  bias[c_width]);
 
 void sigmoid(int a_width,int channel,
-                 double matrix_a[channel][a_width][a_width],
-                 double matrix_b[channel][a_width][a_width]);
+                 float matrix_a[channel][a_width][a_width],
+                 float matrix_b[channel][a_width][a_width]);
 
-void softmax(size_t input_len,  double input[input_len]);
+void softmax(size_t input_len,  float input[input_len]);
 
 
 int main(){
@@ -44,7 +44,7 @@ int main(){
 
     // ----- LAYER 1
     int sizexy_conv1 = imgsize-filter_size+1;
-     double out_conv_1[6][sizexy_conv1][sizexy_conv1];
+     float out_conv_1[6][sizexy_conv1][sizexy_conv1];
 
     gettimeofday(&tv,NULL);
     start = 1000000 * tv.tv_sec + tv.tv_usec;
@@ -69,7 +69,7 @@ int main(){
     
     // ----- LAYER 2
     int sizexy_pool1 = sizexy_conv1 / 2;
-     double out_pool_1[6][sizexy_pool1][sizexy_pool1];
+     float out_pool_1[6][sizexy_pool1][sizexy_pool1];
 
     gettimeofday(&tv,NULL);
     start = 1000000 * tv.tv_sec + tv.tv_usec;
@@ -84,7 +84,7 @@ int main(){
 
     // ----- LAYER 3
     int sizexy_conv2 = sizexy_pool1-filter_size+1;
-     double out_conv_2[16][sizexy_conv2][sizexy_conv2];
+     float out_conv_2[16][sizexy_conv2][sizexy_conv2];
 
     gettimeofday(&tv,NULL);
     start = 1000000 * tv.tv_sec + tv.tv_usec;
@@ -109,7 +109,7 @@ int main(){
 
     // ----- LAYER 4
     int sizexy_pool2 = sizexy_conv2 / 2;
-     double out_pool_2[16][sizexy_pool2][sizexy_pool2];
+     float out_pool_2[16][sizexy_pool2][sizexy_pool2];
 
     gettimeofday(&tv,NULL);
     start = 1000000 * tv.tv_sec + tv.tv_usec;
@@ -124,7 +124,7 @@ int main(){
 
     // ----- LAYER 5 
     int sizexy_conv3 = sizexy_pool2-filter_size+1;
-     double out_conv_3[120][sizexy_conv3][sizexy_conv3];
+     float out_conv_3[120][sizexy_conv3][sizexy_conv3];
 
     gettimeofday(&tv,NULL);
     start = 1000000 * tv.tv_sec + tv.tv_usec;
@@ -138,7 +138,7 @@ int main(){
 
 
     // ----- FLATTEN
-    double out_conv_3_flat[120];
+    float out_conv_3_flat[120];
 
     gettimeofday(&tv,NULL);
     start = 1000000 * tv.tv_sec + tv.tv_usec;
@@ -154,7 +154,7 @@ int main(){
 
 
     // ----- LAYER 6
-    double out_fc_1[87];
+    float out_fc_1[87];
 
     gettimeofday(&tv,NULL);
     start = 1000000 * tv.tv_sec + tv.tv_usec;
@@ -179,7 +179,7 @@ int main(){
     printf("Sigmoid 3\t\ttook %lu microseconds\n", stop-start);
 
     // ----- LAYER 7
-    double out_fc_2[10];
+    float out_fc_2[10];
 
     gettimeofday(&tv,NULL);
     start = 1000000 * tv.tv_sec + tv.tv_usec;
@@ -213,10 +213,10 @@ int main(){
 }
 
 void convolution(int a_width, int b_width, int channel_in, int channel_out,
-                 double matrix_a[channel_in][a_width][a_width], 
-                 double matrix_b[channel_out][channel_in][b_width][b_width], 
-                 double matrix_c[channel_out][a_width - b_width + 1][a_width - b_width + 1],
-                 double bias[channel_out]){
+                 float matrix_a[channel_in][a_width][a_width], 
+                 float matrix_b[channel_out][channel_in][b_width][b_width], 
+                 float matrix_c[channel_out][a_width - b_width + 1][a_width - b_width + 1],
+                 float bias[channel_out]){
 
     int kCenter = b_width / 2;
     
@@ -255,10 +255,10 @@ void convolution(int a_width, int b_width, int channel_in, int channel_out,
 }
 
 void avgpool(int a_width, int amount,int channel,
-                 double matrix_a[channel][a_width][a_width],
-                 double matrix_b[channel][a_width/amount][a_width/amount]){
-     double sum;
-     double adding;
+                 float matrix_a[channel][a_width][a_width],
+                 float matrix_b[channel][a_width/amount][a_width/amount]){
+     float sum;
+     float adding;
     for(int c = 0; c < channel; c++){
         for (int i = 0; i < a_width - amount + 1; i = i + amount){
             for (int j = 0; j < a_width - amount + 1; j = j + amount){
@@ -280,10 +280,10 @@ void avgpool(int a_width, int amount,int channel,
 }
 
 void fully_connected(int a_width, int c_width,
-                    double  matrix_a[a_width],
-                    double  matrix_b[c_width][a_width],
-                    double  matrix_c[c_width],
-                    double  bias[c_width]){
+                    float  matrix_a[a_width],
+                    float  matrix_b[c_width][a_width],
+                    float  matrix_c[c_width],
+                    float  bias[c_width]){
 
     for(int i = 0; i < c_width; i++){
         
@@ -299,15 +299,15 @@ void fully_connected(int a_width, int c_width,
     return;
 }
 
- double sigmoidl( double n) {
+ float sigmoidl( float n) {
 
     return (1 / (1 + powf(EULER_NUMBER_F, -n)));
 
 }
 
 void sigmoid(int a_width,int channel,
-                 double matrix_a[channel][a_width][a_width],
-                 double matrix_b[channel][a_width][a_width]){
+                 float matrix_a[channel][a_width][a_width],
+                 float matrix_b[channel][a_width][a_width]){
     
     for (int c = 0; c < channel; c ++){
         for (int i = 0; i < a_width; i ++){
@@ -320,22 +320,22 @@ void sigmoid(int a_width,int channel,
 
 }
 
-void softmax(size_t input_len,  double input[input_len]) {
+void softmax(size_t input_len,  float input[input_len]) {
   assert(input);
 
-   double m = -INFINITY;
+   float m = -INFINITY;
   for (size_t i = 0; i < input_len; i++) {
     if (input[i] > m) {
       m = input[i];
     }
   }
 
-   double sum = 0.0;
+   float sum = 0.0;
   for (size_t i = 0; i < input_len; i++) {
     sum += expf(input[i] - m);
   }
 
-   double offset = m + logf(sum);
+   float offset = m + logf(sum);
   for (size_t i = 0; i < input_len; i++) {
     input[i] = expf(input[i] - offset);
   }
