@@ -52,6 +52,8 @@ int main(){
 
 	cudaSetDevice(0);
 
+	cudaFree(0);
+
 	//LAYER 1-----------------------------------------------------------------------------------------------------------
 
 	int threads = 13;
@@ -296,10 +298,10 @@ __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
 
 	if(!(idx >= a_width || idy >= a_width)){
 		if(threadIdx.z < channel){
-			s[ threadIdx.x + threadIdx.y * tile_size + threadIdx.z * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + idz * a_width * a_width ];
+			s[ threadIdx.x + threadIdx.y * tile_size + 
+			threadIdx.z * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + idz * a_width * a_width ];
 		}
 	}
-	
 
 	__syncthreads();
 
@@ -310,9 +312,10 @@ __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
 	if( threadIdx.x < tile_size && threadIdx.y < tile_size && threadIdx.z < channel){
 		if( threadIdx.x % 2 == 0 && threadIdx.y % 2 == 0 ){
 		
-			//for(int c = 0; c < channel; c++){
 				float res = 0;
+				#pragma unroll
 				for(int i = 0; i < amount; i++){
+					#pragma unroll
 					for(int j = 0; j < amount; j++){
 
 						int ii = threadIdx.x + i;
@@ -368,19 +371,22 @@ __global__ void convolution(int a_width, int b_width, int channel_in, int channe
 	
 			float res = bias[idz];
 
+			#pragma unroll
 			for(int i = 0; i < b_width; i++){
+				#pragma unroll
 				for(int j = 0; j < b_width; j++){
 
 					int ii = threadIdx.x + i - kCenter;
 					int jj = threadIdx.y + j - kCenter;
 
 					if(threadIdx.x > (b_width/2) && threadIdx.x < tile_size-(b_width/2) && threadIdx.y > (b_width/2) && threadIdx.y < tile_size-(b_width/2)){
+						#pragma unroll
 						for(int c_in = 0; c_in < channel_in; c_in++){
 							res += s[ii + jj * tile_size + c_in * tile_size * tile_size] * matrix_b[i + j * b_width + c_in * b_width * b_width + idz * channel_in * b_width * b_width];
 						}
 					}
 					else{
-
+						#pragma unroll
 						for(int c_in = 0; c_in < channel_in; c_in++){
 							res += matrix_a[ (idx + i - kCenter) + (idy + j - kCenter) * a_width + c_in * a_width * a_width ] * matrix_b[i + j * b_width + c_in * b_width * b_width + idz * channel_in * b_width * b_width];
 						}
@@ -434,20 +440,22 @@ __global__ void convolution_nosigmoid(int a_width, int b_width, int channel_in, 
 			
 	
 			float res = bias[idz];
-
+			#pragma unroll
 			for(int i = 0; i < b_width; i++){
+				#pragma unroll
 				for(int j = 0; j < b_width; j++){
 
 					int ii = threadIdx.x + i - kCenter;
 					int jj = threadIdx.y + j - kCenter;
 
 					if(threadIdx.x > (b_width/2) && threadIdx.x < tile_size-(b_width/2) && threadIdx.y > (b_width/2) && threadIdx.y < tile_size-(b_width/2)){
+						#pragma unroll
 						for(int c_in = 0; c_in < channel_in; c_in++){
 							res += s[ii + jj * tile_size + c_in * tile_size * tile_size] * matrix_b[i + j * b_width + c_in * b_width * b_width + idz * channel_in * b_width * b_width];
 						}
 					}
 					else{
-
+						#pragma unroll
 						for(int c_in = 0; c_in < channel_in; c_in++){
 							res += matrix_a[ (idx + i - kCenter) + (idy + j - kCenter) * a_width + c_in * a_width * a_width ] * matrix_b[i + j * b_width + c_in * b_width * b_width + idz * channel_in * b_width * b_width];
 						}
@@ -486,6 +494,7 @@ __global__ void linear_layer(
 	if (idx >= n_outfeats) return;
 
 	output[idx] = bias[idx];
+	#pragma unroll
 	for (int i=0; i<n_infeats; i++) {
 		output[idx] += weights[idx*n_infeats + i] *  input[i];
 	}
@@ -515,6 +524,7 @@ void softmax(size_t input_len, float *input) {
 	assert(input);
 
 	float m = -INFINITY;
+	#pragma unroll
 	for (size_t i = 0; i < input_len; i++) {
 		if (input[i] > m) {
 			m = input[i];
@@ -522,11 +532,13 @@ void softmax(size_t input_len, float *input) {
 	}
 
 	float sum = 0.0;
+	#pragma unroll
 	for (size_t i = 0; i < input_len; i++) {
 		sum += expf(input[i] - m);
 	}
 
 	float offset = m + logf(sum);
+	#pragma unroll
 	for (size_t i = 0; i < input_len; i++) {
 		input[i] = expf(input[i] - offset);
 	}
