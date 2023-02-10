@@ -52,7 +52,7 @@ int main(){
 
 	// Host to Device
 
-	cudaMalloc( (void**)&dev_input_pool1, 32*32*3 * sizeof( float) );
+	cudaMalloc( (void**)&dev_input_pool1, 32*32*6 * sizeof( float) );
 	cudaMalloc( (void**)&dev_output_pool1, 16*16*6 * sizeof( float) );
 
 
@@ -68,38 +68,13 @@ int main(){
 
 	cudaFree(dev_input_pool1);
 	cudaFree(dev_output_pool1);
-
-	// -------------------------- FC1 -----------------------------------------
-/*
-	// define layer sizes
-	int NCHANNEL_CONV3 = 120;
-	int NFEATS_FC1 = 84;
-	int NFEATS_FC2 = 10;
-
-	// define number of threads and blocks
-	threads = NFEATS_FC1;
-	int blocks = 1;
-
-	// allocate and populate memory for fc1
-	float *conv3_out_dev, *fc1_weights_dev, *fc1_bias_dev, *fc1_out_dev;
-
-	cudaMalloc((void**)&conv3_out_dev, NCHANNEL_CONV3 * sizeof(float));
-	cudaMalloc((void**)&fc1_weights_dev, NCHANNEL_CONV3 * NFEATS_FC1 * sizeof(float));
-	cudaMalloc((void**)&fc1_bias_dev, NFEATS_FC1 * sizeof(float));
-	cudaMalloc((void**)&fc1_out_dev, NFEATS_FC1 * sizeof(float));
-
-	cudaMemcpy(fc1_weights_dev, fc1_weight, NCHANNEL_CONV3 * NFEATS_FC1 * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(fc1_bias_dev, fc1_bias, NFEATS_FC1 * sizeof(float), cudaMemcpyHostToDevice);
-
-	// layer computations
-	linear_layer<<<blocks, threads>>>(NCHANNEL_CONV3, NFEATS_FC1, dev_output_conv3, fc1_weights_dev, fc1_bias_dev, fc1_out_dev);
-
-	// free input and parameter memory on device
-	cudaFree(conv3_out_dev);
-	cudaFree(fc1_weights_dev);
-	cudaFree(fc1_bias_dev);
-	cudaFree(dev_output_conv3);
-*/
+for (int c = 0; c < 6; c++){
+	for (int i = 0; i < 16; i++){
+		for (int j = 0; j < 16; j++){
+			printf("%f ",output[c][i][j]);
+		}
+	}
+}
 	cudaDeviceReset();
 }
 
@@ -120,8 +95,7 @@ __global__ void avgpool(int a_width, int amount,int channel,int tile_size,
 
 	if(!(idx >= a_width || idy >= a_width)){
 		if(threadIdx.z < channel){
-			s[ threadIdx.x + threadIdx.y * tile_size + 
-			threadIdx.z * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + idz * a_width * a_width ];
+			s[ threadIdx.x + threadIdx.y * tile_size + threadIdx.z * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + idz * a_width * a_width ];
 		}
 	}
 
