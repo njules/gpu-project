@@ -58,27 +58,31 @@ int main(){
 
 	int threads = 13;
 	int filter = 6;
-	dim3 block_conv_1(threads,threads,filter); //threads
-	dim3 grid_conv_1(3,3,1); //blocks
+	dim3 block_convo_1(threads,threads,filter); //threads
+	dim3 grid_convo_1(3,3,1); //blocks
 
-	float *input_dev, *weight_dev, *out_dev_1, *out_dev_2, *bias_dev;
-
-	//allocating cuda memory
-
-	cudaMalloc( (void**)&input_dev, 32*32*3 * sizeof( float) );
-	cudaMalloc( (void**)&weight_dev, 120*16*5*5 * sizeof( float) );
-	cudaMalloc( (void**)&out_dev_1, 28*28*6 * sizeof( float) );
-	cudaMalloc( (void**)&out_dev_2, 28*28*6 * sizeof( float) );
-	cudaMalloc( (void**)&bias_dev, 120 * sizeof( float) );
+	float *dev_input_conv1, *dev_matrix_conv1, *dev_bias1, *dev_output_conv1;
 
 	// Host to Device
 
-	cudaMemcpy( input_dev, input, 32*32*3 * sizeof( float), cudaMemcpyHostToDevice);
-	cudaMemcpy( weight_dev, conv1_weight, 48000 * sizeof( float), cudaMemcpyHostToDevice);
-	cudaMemcpy( bias_dev, conv1_bias, 6 * sizeof( float), cudaMemcpyHostToDevice);
+	cudaMalloc( (void**)&dev_input_conv1, 32*32*3 * sizeof( float) );
+	cudaMalloc( (void**)&dev_matrix_conv1, 5*5*3*6 * sizeof( float) );
+	cudaMalloc( (void**)&dev_output_conv1, 28*28*6 * sizeof( float) );
+	cudaMalloc( (void**)&dev_bias1, 6 * sizeof( float) );
+
+	cudaMemcpy( dev_input_conv1, input, 32*32*3 * sizeof( float), cudaMemcpyHostToDevice);
+	cudaMemcpy( dev_matrix_conv1, conv1_weight, 5*5*3*6 * sizeof( float), cudaMemcpyHostToDevice);
+	cudaMemcpy( dev_bias1, conv1_bias, 6 * sizeof( float), cudaMemcpyHostToDevice);
 
 	//kernel
-	convolution<<<grid_conv_1,block_conv_1, threads * threads * filter * sizeof( float)>>>(32,5,3,6,threads,input_dev,weight_dev,out_dev_1,bias_dev);
+	convolution<<<grid_convo_1,block_convo_1, threads * threads * filter * sizeof( float)>>>(32,5,3,6,threads,dev_input_conv1,dev_matrix_conv1,dev_output_conv1,dev_bias1);
+
+	// Freeing Space
+
+	cudaFree(dev_input_conv1);
+	cudaFree(dev_matrix_conv1);
+	cudaFree(dev_bias1);
+
 
 	//LAYER 2-----------------------------------------------------------------------------------------------------------
 
@@ -89,24 +93,47 @@ int main(){
 	dim3 block_pool_1(threads,threads,filter); //threads
 	dim3 grid_pool_1(3,3,1); //blocks
 
+	float  *dev_output_pool1;
+
+	// Host to Device
+
+	cudaMalloc( (void**)&dev_output_pool1, 14*14*6 * sizeof( float) );
+
 	//kernel
-	avgpool<<<grid_pool_1,block_pool_1, threads * threads * filter * sizeof( float)>>>(28,2,6,threads,out_dev_1,out_dev_2);
+	avgpool<<<grid_pool_1,block_pool_1, threads * threads * filter * sizeof( float)>>>(28,2,6,threads,dev_output_conv1,dev_output_pool1);
+
+	// Freeing Space
+
+	cudaFree(dev_output_conv1);
 
 
 	//LAYER 3-----------------------------------------------------------------------------------------------------------
 
 	threads = 8;
 	filter = 16;
-	dim3 block_conv_2(threads,threads,filter); //threads
-	dim3 grid_conv_2(2,2,1); //blocks
+	dim3 block_convo_2(threads,threads,filter); //threads
+	dim3 grid_convo_2(2,2,1); //blocks
+
+	float *dev_matrix_conv2, *dev_bias2, *dev_output_conv2;
+
 
 	// Host to Device
 
-	cudaMemcpy( weight_dev, conv2_weight, 5*5*6*16 * sizeof( float), cudaMemcpyHostToDevice);
-	cudaMemcpy( bias_dev, conv2_bias, 16 * sizeof( float), cudaMemcpyHostToDevice);
+	cudaMalloc( (void**)&dev_matrix_conv2, 5*5*6*16 * sizeof( float) );
+	cudaMalloc( (void**)&dev_output_conv2, 10*10*16 * sizeof( float) );
+	cudaMalloc( (void**)&dev_bias2, 16 * sizeof( float) );
+
+	cudaMemcpy( dev_matrix_conv2, conv2_weight, 5*5*6*16 * sizeof( float), cudaMemcpyHostToDevice);
+	cudaMemcpy( dev_bias2, conv2_bias, 16 * sizeof( float), cudaMemcpyHostToDevice);
 
 	//kernel
-	convolution<<<grid_conv_2,block_conv_2, threads * threads * filter * sizeof( float)>>>(14,5,6,16,threads,out_dev_2,weight_dev,out_dev_1,bias_dev);
+	convolution<<<grid_convo_2,block_convo_2, threads * threads * filter * sizeof( float)>>>(14,5,6,16,threads,dev_output_pool1,dev_matrix_conv2,dev_output_conv2,dev_bias2);
+
+	// Freeing Space
+
+	cudaFree(dev_matrix_conv2);
+	cudaFree(dev_output_pool1);
+	cudaFree(dev_bias2);
 
 
 	//LAYER 4-----------------------------------------------------------------------------------------------------------
@@ -116,82 +143,130 @@ int main(){
 	dim3 block_pool_2(threads,threads,filter); //threads
 	dim3 grid_pool_2(2,2,1); //blocks
 
+	float *dev_output_pool2;
+
+	// Host to Device
+
+	cudaMalloc( (void**)&dev_output_pool2, 5*5*16 * sizeof( float) );
+
 	//kernel
-	avgpool<<<grid_pool_2,block_pool_2, threads * threads * filter * sizeof( float)>>>(10,2,16,threads,out_dev_1,out_dev_2);
+	avgpool<<<grid_pool_2,block_pool_2, threads * threads * filter * sizeof( float)>>>(10,2,16,threads,dev_output_conv2,dev_output_pool2);
+
+	// Freeing Space
+
+	cudaFree(dev_output_conv2);
 
 	//LAYER 5-----------------------------------------------------------------------------------------------------------
 
 	threads = 2;
 	filter = 60;
-	dim3 block_conv_3(threads,threads,filter); //threads
-	dim3 grid_conv_3(4,4,2); //blocks
+	dim3 block_convo_3(threads,threads,filter); //threads
+	dim3 grid_convo_3(4,4,2); //blocks
+
+	float  *dev_matrix_conv3, *dev_bias3, *dev_output_conv3;
+
 
 	// Host to Device
 
-	cudaMemcpy( weight_dev, conv3_weight, 5*5*16*120 * sizeof( float), cudaMemcpyHostToDevice);
-	cudaMemcpy( bias_dev, conv3_bias, 120 * sizeof( float), cudaMemcpyHostToDevice);
+	cudaMalloc( (void**)&dev_matrix_conv3, 5*5*16*120 * sizeof( float) );
+	cudaMalloc( (void**)&dev_output_conv3, 1*1*120 * sizeof( float) );
+	cudaMalloc( (void**)&dev_bias3, 120 * sizeof( float) );
+
+	cudaMemcpy( dev_matrix_conv3, conv3_weight, 5*5*16*120 * sizeof( float), cudaMemcpyHostToDevice);
+	cudaMemcpy( dev_bias3, conv3_bias, 120 * sizeof( float), cudaMemcpyHostToDevice);
 
 	//kernel
-	convolution_nosigmoid<<<grid_conv_3,block_conv_3, threads * threads * filter * sizeof( float)>>>(5,5,16,120,threads,out_dev_2,weight_dev,out_dev_1,bias_dev);
+	convolution_nosigmoid<<<grid_convo_3,block_convo_3, threads * threads * filter * sizeof( float)>>>(5,5,16,120,threads,dev_output_pool2,dev_matrix_conv3,dev_output_conv3,dev_bias3);
+
+	// Freeing Space
+
+	cudaFree(dev_matrix_conv3);
+	cudaFree(dev_output_pool2);
+	cudaFree(dev_bias3);
 
 	// -------------------------- FC1 -----------------------------------------
 
+	// define layer sizes
+	int NCHANNEL_CONV3 = 120;
+	int NFEATS_FC1 = 84;
+	int NFEATS_FC2 = 10;
+
 	// define number of threads and blocks
-	threads = 84;
+	threads = NFEATS_FC1;
 	int blocks = 1;
 
-	cudaMemcpy(weight_dev, fc1_weight, 120 * 84 * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(bias_dev, fc1_bias, 84 * sizeof(float), cudaMemcpyHostToDevice);
+	// allocate and populate memory for fc1
+	float *fc1_weights_dev, *fc1_bias_dev, *fc1_out_dev;
+
+	cudaMalloc((void**)&fc1_weights_dev, NCHANNEL_CONV3 * NFEATS_FC1 * sizeof(float));
+	cudaMalloc((void**)&fc1_bias_dev, NFEATS_FC1 * sizeof(float));
+	cudaMalloc((void**)&fc1_out_dev, NFEATS_FC1 * sizeof(float));
+
+	cudaMemcpy(fc1_weights_dev, fc1_weight, NCHANNEL_CONV3 * NFEATS_FC1 * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(fc1_bias_dev, fc1_bias, NFEATS_FC1 * sizeof(float), cudaMemcpyHostToDevice);
 
 	// layer computations
-	linear_layer<<<blocks, threads>>>(120, 84, out_dev_1, weight_dev, bias_dev, out_dev_2);
+	linear_layer<<<blocks, threads>>>(NCHANNEL_CONV3, NFEATS_FC1, dev_output_conv3, fc1_weights_dev, fc1_bias_dev, fc1_out_dev);
 
+	// free input and parameter memory on device
+	cudaFree(fc1_weights_dev);
+	cudaFree(fc1_bias_dev);
+	cudaFree(dev_output_conv3);
 
 	// -------------------------- sigmoid -------------------------------------
 
+	// allocate memory for fc1 sigmoid output
+	float *fc1sigmoid_out_dev;
+	cudaMalloc((void**)&fc1sigmoid_out_dev, NFEATS_FC1 * sizeof(float));
+
 	// sigmoid activation function
-	sigmoid_activation<<<blocks, threads>>>(84, out_dev_2, out_dev_1);
+	sigmoid_activation<<<blocks, threads>>>(NFEATS_FC1, fc1_out_dev, fc1sigmoid_out_dev);
+
+	// free input memory on device
+	cudaFree(fc1_out_dev);
 
 	// -------------------------- FC2 -----------------------------------------
 
 	// define number of threads and blocks
-	threads = 10;
+	threads = NFEATS_FC2;
 	blocks = 1;
 
-	cudaMemcpy(weight_dev, fc2_weight, 84 * 10 * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMemcpy(bias_dev, fc2_bias, 10 * sizeof(float), cudaMemcpyHostToDevice);
+	// allocate and populate memory for fc2
+	float *fc2_weights_dev, *fc2_bias_dev, *fc2_out_dev;
+
+	cudaMalloc((void**)&fc2_weights_dev, NFEATS_FC1 * NFEATS_FC2 * sizeof(float));
+	cudaMalloc((void**)&fc2_bias_dev, NFEATS_FC2 * sizeof(float));
+	cudaMalloc((void**)&fc2_out_dev, NFEATS_FC2 * sizeof(float));
+
+	cudaMemcpy(fc2_weights_dev, fc2_weight, NFEATS_FC1 * NFEATS_FC2 * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(fc2_bias_dev, fc2_bias, NFEATS_FC2 * sizeof(float), cudaMemcpyHostToDevice);
 
 	// layer computations
-	linear_layer<<<blocks, threads>>>(84, 10, out_dev_1, weight_dev, bias_dev, out_dev_2);
+	linear_layer<<<blocks, threads>>>(NFEATS_FC1, NFEATS_FC2, fc1sigmoid_out_dev, fc2_weights_dev, fc2_bias_dev, fc2_out_dev);
 
+	// free input and parameter memory on device
+	cudaFree(fc1sigmoid_out_dev);
+	cudaFree(fc2_weights_dev);
+	cudaFree(fc2_bias_dev);
 
 	// -------------------------- softmax -------------------------------------
 
 	// move final layer output to host
-	float *fc2_out = (float*) malloc(10 * sizeof(float));
-	cudaMemcpy(fc2_out , out_dev_2, 10 * sizeof(float), cudaMemcpyDeviceToHost);
+	float *fc2_out = (float*) malloc(NFEATS_FC2 * sizeof(float));
+	cudaMemcpy(fc2_out , fc2_out_dev, NFEATS_FC2 * sizeof(float), cudaMemcpyDeviceToHost);
+	cudaFree(fc2_out_dev);
 
 	// perform softmax computation
-	softmax(10, fc2_out);
-
-	// --------------------------  output  -------------------------------------
+	softmax(NFEATS_FC2, fc2_out);
 
 	// print final class probabilities:
 	printf("Final class probabilities:\n");
-	for (int i = 0; i < 10; i++){
+	for (int i = 0; i < NFEATS_FC2; i++){
 		printf("%lf ", fc2_out[i]);
 	}
 	printf("\n");
 	
 	free(fc2_out);
-
-	//freeing cuda memory
-
-	cudaFree(input_dev);
-	cudaFree(weight_dev);
-	cudaFree(out_dev_1);
-	cudaFree(out_dev_2);
-	cudaFree(bias_dev);
 
 	cudaDeviceReset();
 }
@@ -458,3 +533,46 @@ void softmax(size_t input_len, float *input) {
 		input[i] = expf(input[i] - offset);
 	}
 }
+
+/*
+
+// IN CASE IT IS MORE CONVENIENT BUT I DOUBT IT DUE TO MEMORY BOTTLENECK
+
+__global__ void sigmoid(int a_width,int channel,
+                 float *matrix_a, 
+                 float *matrix_b){
+
+	int idx = blockDim.x * blockIdx.x + threadIdx.x;
+	int idy = blockDim.y * blockIdx.y + threadIdx.y;
+	
+	__shared__  extern float s[];
+
+	//to shared memory (no ghost cells)
+
+	if(idx >= a_width || idy >= a_width) return;
+	
+	for(int c_in = 0; c_in < channel; c_in++){
+		s[ threadIdx.x + threadIdx.y * tile_size + c_in * tile_size * tile_size ] = matrix_a[ idx + idy * a_width + c_in * a_width * a_width ];
+	}
+
+	__syncthreads();
+
+	//start computation
+
+	if( threadIdx.x < tile_size && threadIdx.y < tile_size){
+		
+		for(int c = 0; c < channel; c++){
+			float res = 0;
+
+			int ii = threadIdx.x;
+			int jj = threadIdx.y;
+
+			res = sigmoidl(s[ii + jj * tile_size + c * tile_size * tile_size]);
+					
+			matrix_b[ idx + idy * a_width + c * a_width * a_width ] = res;
+		}
+	}
+
+}
+
+*/

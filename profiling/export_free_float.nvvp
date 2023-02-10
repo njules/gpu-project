@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
-<session version="2" name="export_free_float.nvvp" hscale="3.6528735211538243E-6" normalize="false">
+<session version="2" name="export_free_float.nvvp" hscale="1.279480988584713E-5" normalize="false">
 <timelineoptions enabletimerange="false" start="-1" end="-1" numsegmentsuvm="100" uvmisegmentenabled="true"/>
 <expert><columnprops></columnprops>
 </expert>
-<analysis guided="false"></analysis>
+<analysis guided="false"><visitedstages><stage name="TIMELINE"/></visitedstages></analysis>
 <expertsystem current="INTRO"><visited><stage name="INTRO"/></visited></expertsystem>
 <vruler width="200"/>
 <hruler>
